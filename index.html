@@ -9,7 +9,7 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   >
 
-  <title>楚门的世界 · AR Sketch Book V5</title>
+  <title>楚门的世界 · AR Sketch Book V6 Smooth</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -26,9 +26,12 @@
     body {
       margin: 0;
       padding: 0;
+
       width: 100%;
       height: 100%;
+
       overflow: hidden;
+
       background: #000;
 
       font-family:
@@ -43,6 +46,7 @@
 
     a-scene {
       position: fixed;
+
       left: 0;
       right: 0;
       top: 0;
@@ -59,6 +63,7 @@
 
     #ui {
       position: fixed;
+
       z-index: 50;
 
       left: 0;
@@ -183,7 +188,8 @@
 
       border-radius: 30px 0 0 30px;
 
-      background: rgba(255, 255, 255, 0.95);
+      background:
+        rgba(255, 255, 255, 0.95);
 
       color: #13c98a;
 
@@ -209,14 +215,259 @@
         scale(0.95);
     }
 
+
     #scanning {
       display: none;
     }
   </style>
+
+
+  <script>
+
+    /* =====================================================
+       二次平滑组件
+       =====================================================
+
+       MindAR 只负责给 #targetAnchor 计算位置。
+
+       真正显示的 AR 内容放在 #contentRoot。
+
+       contentRoot 不直接继承 target 的抖动，
+       而是每一帧缓慢跟随。
+
+    ===================================================== */
+
+    AFRAME.registerComponent(
+      "smooth-follow",
+      {
+
+        schema: {
+
+          target: {
+            type: "selector"
+          },
+
+          positionSmooth: {
+            default: 0.10
+          },
+
+          rotationSmooth: {
+            default: 0.08
+          },
+
+          scaleSmooth: {
+            default: 0.12
+          }
+
+        },
+
+
+        init: function () {
+
+          this.targetPosition =
+            new THREE.Vector3();
+
+          this.targetQuaternion =
+            new THREE.Quaternion();
+
+          this.targetScale =
+            new THREE.Vector3(1, 1, 1);
+
+
+          this.currentPosition =
+            new THREE.Vector3();
+
+          this.currentQuaternion =
+            new THREE.Quaternion();
+
+          this.currentScale =
+            new THREE.Vector3(1, 1, 1);
+
+
+          this.initialized = false;
+
+          this.enabledTracking = false;
+
+
+          /*
+            对外提供方法
+
+            targetFound 时开启
+            targetLost 时停止继续更新
+          */
+
+          this.el.addEventListener(
+            "smoothStart",
+
+            () => {
+
+              this.enabledTracking = true;
+
+              /*
+                每次重新识别时
+                第一帧直接吸附过去
+
+                防止从旧位置慢慢飞过去
+              */
+
+              this.initialized = false;
+
+            }
+          );
+
+
+          this.el.addEventListener(
+            "smoothStop",
+
+            () => {
+
+              this.enabledTracking = false;
+
+            }
+          );
+
+        },
+
+
+        tick: function () {
+
+          if (
+            !this.enabledTracking ||
+            !this.data.target
+          ) {
+
+            return;
+
+          }
+
+
+          const targetObject =
+            this.data.target.object3D;
+
+
+          /*
+            获取 MindAR 当前世界位置
+          */
+
+          targetObject.getWorldPosition(
+            this.targetPosition
+          );
+
+
+          targetObject.getWorldQuaternion(
+            this.targetQuaternion
+          );
+
+
+          targetObject.getWorldScale(
+            this.targetScale
+          );
+
+
+          /*
+            第一次识别时
+            不做缓动
+            直接贴到正确位置
+          */
+
+          if (
+            !this.initialized
+          ) {
+
+            this.currentPosition.copy(
+              this.targetPosition
+            );
+
+
+            this.currentQuaternion.copy(
+              this.targetQuaternion
+            );
+
+
+            this.currentScale.copy(
+              this.targetScale
+            );
+
+
+            this.initialized = true;
+
+          }
+
+          else {
+
+            /*
+              =========================
+              位置平滑
+              =========================
+
+              数字越小：
+              越稳
+              但跟随越慢
+            */
+
+            this.currentPosition.lerp(
+              this.targetPosition,
+              this.data.positionSmooth
+            );
+
+
+            /*
+              =========================
+              旋转平滑
+              =========================
+            */
+
+            this.currentQuaternion.slerp(
+              this.targetQuaternion,
+              this.data.rotationSmooth
+            );
+
+
+            /*
+              =========================
+              缩放平滑
+              =========================
+            */
+
+            this.currentScale.lerp(
+              this.targetScale,
+              this.data.scaleSmooth
+            );
+
+          }
+
+
+          /*
+            把平滑后的数据
+            应用到真正 AR 内容
+          */
+
+          this.el.object3D.position.copy(
+            this.currentPosition
+          );
+
+
+          this.el.object3D.quaternion.copy(
+            this.currentQuaternion
+          );
+
+
+          this.el.object3D.scale.copy(
+            this.currentScale
+          );
+
+        }
+
+      }
+    );
+
+  </script>
+
 </head>
 
 
 <body>
+
 
   <!-- =========================
        UI
@@ -241,11 +492,12 @@
 
 
   <div id="hint">
-    尽量让整张绘本进入镜头，慢慢移动手机；识别后保持稳定
+    尽量让整张绘本进入镜头，识别后保持稳定
   </div>
 
 
   <div id="scanning"></div>
+
 
 
   <!-- =========================
@@ -287,18 +539,24 @@
     embedded
   >
 
+
     <!-- =========================
          ASSETS
     ========================= -->
 
     <a-assets>
 
-      <!-- AR 视频 -->
+
+      <!-- =========================
+           新视频
+           已换成 v=5
+      ========================= -->
+
       <video
 
         id="arVideo"
 
-        src="./video/truman_portal.mp4?v=4"
+        src="./video/truman_portal.mp4?v=5"
 
         preload="auto"
 
@@ -315,7 +573,10 @@
       ></video>
 
 
-      <!-- 原创音乐 -->
+      <!-- =========================
+           原创音乐
+      ========================= -->
+
       <audio
 
         id="arAudio"
@@ -328,7 +589,9 @@
 
       ></audio>
 
+
     </a-assets>
+
 
 
     <!-- =========================
@@ -344,19 +607,53 @@
     ></a-camera>
 
 
-    <!-- =========================
-         IMAGE TARGET
-    ========================= -->
+
+    <!-- =====================================================
+         MindAR 识别锚点
+
+         注意：
+
+         这里不再放门、视频、台阶！
+
+         它只负责追踪。
+    ===================================================== -->
 
     <a-entity
 
-      id="target"
+      id="targetAnchor"
 
       mindar-image-target="
         targetIndex: 0;
       "
 
+    ></a-entity>
+
+
+
+    <!-- =====================================================
+         真正显示的 AR 内容
+
+         这个节点不直接挂到 MindAR target 下面。
+
+         它通过 smooth-follow
+         平滑跟随 targetAnchor。
+    ===================================================== -->
+
+    <a-entity
+
+      id="contentRoot"
+
+      visible="false"
+
+      smooth-follow="
+        target: #targetAnchor;
+        positionSmooth: 0.10;
+        rotationSmooth: 0.08;
+        scaleSmooth: 0.12;
+      "
+
     >
+
 
 
       <!-- =========================
@@ -387,6 +684,7 @@
       ></a-plane>
 
 
+
       <!-- =========================
            门后空间
       ========================= -->
@@ -415,8 +713,11 @@
       ></a-box>
 
 
+
       <!-- =========================
            AR VIDEO
+
+           尺寸保持不变
       ========================= -->
 
       <a-video
@@ -435,7 +736,7 @@
 
         height="0.540"
 
-        visible="false"
+        visible="true"
 
         material="
           shader: flat;
@@ -444,6 +745,7 @@
         "
 
       ></a-video>
+
 
 
       <!-- =========================
@@ -472,6 +774,7 @@
       ></a-box>
 
 
+
       <!-- =========================
            右门框
       ========================= -->
@@ -496,6 +799,7 @@
         "
 
       ></a-box>
+
 
 
       <!-- =========================
@@ -524,6 +828,7 @@
       ></a-box>
 
 
+
       <!-- =========================
            第一层台阶
       ========================= -->
@@ -550,6 +855,7 @@
       ></a-box>
 
 
+
       <!-- =========================
            第二层台阶
       ========================= -->
@@ -574,6 +880,7 @@
         "
 
       ></a-box>
+
 
 
       <!-- =========================
@@ -611,6 +918,7 @@
       ></a-sphere>
 
 
+
       <!-- =========================
            粒子 2
       ========================= -->
@@ -644,6 +952,7 @@
         "
 
       ></a-sphere>
+
 
 
       <!-- =========================
@@ -680,51 +989,68 @@
 
       ></a-sphere>
 
+
     </a-entity>
+
 
   </a-scene>
 
 
-  <!-- =========================
+
+  <!-- =====================================================
        JAVASCRIPT
-  ========================= -->
+  ===================================================== -->
 
   <script>
+
 
     const scene =
       document.querySelector("a-scene");
 
+
     const target =
-      document.querySelector("#target");
+      document.querySelector("#targetAnchor");
+
+
+    const contentRoot =
+      document.querySelector("#contentRoot");
+
 
     const video =
       document.querySelector("#arVideo");
 
+
     const audio =
       document.querySelector("#arAudio");
 
-    const plane =
-      document.querySelector("#videoPlane");
 
     const startBtn =
       document.querySelector("#start");
 
+
     const status =
       document.querySelector("#status");
+
 
     const musicBtn =
       document.querySelector("#musicBtn");
 
 
+
     let started = false;
+
 
     let targetVisible = false;
 
+
     let hideTimer = null;
+
 
     let audioUnlocked = false;
 
+
     let musicEnabled = true;
+
 
 
     /* =========================
@@ -733,33 +1059,44 @@
 
     video.muted = true;
 
+
     video.playsInline = true;
 
+
     audio.loop = true;
+
 
     audio.volume = 0;
 
 
 
     /* =========================
-       音乐按钮状态
+       更新音乐按钮
     ========================= */
 
     function updateMusicButton() {
 
-      if (musicEnabled) {
+      if (
+        musicEnabled
+      ) {
 
-        musicBtn.textContent = "♪";
+        musicBtn.textContent =
+          "♪";
 
-        musicBtn.style.opacity = "1";
+
+        musicBtn.style.opacity =
+          "1";
 
       }
 
       else {
 
-        musicBtn.textContent = "×";
+        musicBtn.textContent =
+          "×";
 
-        musicBtn.style.opacity = "0.65";
+
+        musicBtn.style.opacity =
+          "0.65";
 
       }
 
@@ -773,9 +1110,14 @@
 
     function clearHideTimer() {
 
-      if (hideTimer) {
+      if (
+        hideTimer
+      ) {
 
-        clearTimeout(hideTimer);
+        clearTimeout(
+          hideTimer
+        );
+
 
         hideTimer = null;
 
@@ -786,24 +1128,26 @@
 
 
     /* =========================
-       显示视频
+       显示 AR 内容
     ========================= */
 
-    function showVideo() {
+    function showContent() {
 
       clearHideTimer();
 
-      targetVisible = true;
 
-      plane.setAttribute(
+      contentRoot.setAttribute(
         "visible",
         true
       );
 
-      plane.setAttribute(
-        "material",
-        "opacity",
-        1
+
+      /*
+        开启二次平滑追踪
+      */
+
+      contentRoot.emit(
+        "smoothStart"
       );
 
     }
@@ -811,12 +1155,14 @@
 
 
     /* =========================
-       播放 AR 内容
+       播放视频 + 音乐
     ========================= */
 
     async function playARContent() {
 
-      showVideo();
+
+      showContent();
+
 
 
       /* =========================
@@ -826,6 +1172,7 @@
       try {
 
         video.muted = true;
+
 
         video.playsInline = true;
 
@@ -901,23 +1248,40 @@
 
 
     /* =========================
-       延迟隐藏 AR
+       延迟隐藏
     ========================= */
 
     function hideARDelayed() {
+
 
       clearHideTimer();
 
 
       hideTimer =
         setTimeout(
+
           () => {
+
 
             if (
               !targetVisible
             ) {
 
-              plane.setAttribute(
+
+              /*
+                停止更新追踪位置
+              */
+
+              contentRoot.emit(
+                "smoothStop"
+              );
+
+
+              /*
+                隐藏真正 AR 内容
+              */
+
+              contentRoot.setAttribute(
                 "visible",
                 false
               );
@@ -932,6 +1296,14 @@
               catch (e) {}
 
 
+              /*
+                音乐不 pause
+                只静音
+
+                避免移动浏览器
+                再次阻止播放
+              */
+
               try {
 
                 audio.volume = 0;
@@ -944,7 +1316,8 @@
 
           },
 
-          1000
+
+          1200
         );
 
     }
@@ -956,9 +1329,11 @@
     ========================= */
 
     startBtn.addEventListener(
+
       "click",
 
       async () => {
+
 
         if (
           started
@@ -982,12 +1357,14 @@
 
 
         /* =========================
+           用户点击时
            先解锁音乐
         ========================= */
 
         try {
 
           audio.volume = 0;
+
 
           audio.loop = true;
 
@@ -1063,18 +1440,21 @@
         }
 
       }
+
     );
 
 
 
     /* =========================
-       目标识别成功
+       识别成功
     ========================= */
 
     target.addEventListener(
+
       "targetFound",
 
       async () => {
+
 
         clearHideTimer();
 
@@ -1095,20 +1475,29 @@
 
 
     /* =========================
-       目标丢失
+       暂时丢失目标
     ========================= */
 
     target.addEventListener(
+
       "targetLost",
 
       () => {
 
-        status.textContent =
-          "正在重新锁定绘本…";
-
 
         targetVisible = false;
 
+
+        status.textContent =
+          "正在稳定追踪绘本…";
+
+
+        /*
+          不立即消失
+
+          给追踪器 1.2 秒
+          自己重新找到目标
+        */
 
         hideARDelayed();
 
@@ -1123,15 +1512,18 @@
     ========================= */
 
     musicBtn.addEventListener(
+
       "click",
 
       async () => {
+
 
         musicEnabled =
           !musicEnabled;
 
 
         updateMusicButton();
+
 
 
         if (
@@ -1145,7 +1537,16 @@
         }
 
 
+
         try {
+
+
+          /*
+            如果第一次解锁失败
+
+            用户点击音乐按钮本身
+            也属于主动操作
+          */
 
           if (
             !audioUnlocked
@@ -1160,6 +1561,7 @@
             audioUnlocked = true;
 
           }
+
 
 
           if (
@@ -1198,9 +1600,11 @@
     ========================= */
 
     document.addEventListener(
+
       "visibilitychange",
 
       () => {
+
 
         if (
           document.hidden
@@ -1225,15 +1629,12 @@
 
         }
 
-        else {
 
-          if (
-            targetVisible
-          ) {
+        else if (
+          targetVisible
+        ) {
 
-            playARContent();
-
-          }
+          playARContent();
 
         }
 
@@ -1244,13 +1645,15 @@
 
 
     /* =========================
-       页面离开
+       页面关闭
     ========================= */
 
     window.addEventListener(
+
       "beforeunload",
 
       () => {
+
 
         try {
 
@@ -1287,12 +1690,14 @@
 
 
     /* =========================
-       初始化音乐按钮
+       初始化
     ========================= */
 
     updateMusicButton();
 
+
   </script>
+
 
 </body>
 
