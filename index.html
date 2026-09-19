@@ -9,7 +9,7 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   >
 
-  <title>楚门的世界 · AR Sketch Book V4</title>
+  <title>楚门的世界 · AR Sketch Book V5</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -47,6 +47,7 @@
       right: 0;
       top: 0;
       bottom: 0;
+
       width: 100%;
       height: 100%;
     }
@@ -59,6 +60,7 @@
     #ui {
       position: fixed;
       z-index: 50;
+
       left: 0;
       right: 0;
       top: 0;
@@ -69,8 +71,11 @@
         18px;
 
       display: flex;
+
       flex-direction: column;
+
       align-items: center;
+
       gap: 10px;
 
       pointer-events: none;
@@ -80,12 +85,15 @@
       pointer-events: auto;
 
       border: 0;
+
       border-radius: 999px;
+
       padding: 13px 24px;
 
       font-size: 16px;
 
       background: #fff;
+
       color: #111;
 
       box-shadow:
@@ -102,8 +110,11 @@
 
     #status {
       color: #fff;
+
       text-align: center;
+
       font-size: 14px;
+
       line-height: 1.5;
 
       text-shadow:
@@ -113,7 +124,9 @@
         rgba(0, 0, 0, 0.4);
 
       padding: 7px 12px;
+
       border-radius: 12px;
+
       max-width: 90%;
     }
 
@@ -124,6 +137,7 @@
 
     #hint {
       position: fixed;
+
       z-index: 50;
 
       left: 16px;
@@ -133,9 +147,11 @@
         calc(20px + env(safe-area-inset-bottom));
 
       text-align: center;
+
       color: #fff;
 
       font-size: 13px;
+
       line-height: 1.5;
 
       text-shadow:
@@ -151,9 +167,11 @@
 
     #musicBtn {
       position: fixed;
+
       z-index: 60;
 
       right: 0;
+
       top: 74%;
 
       transform: translateY(-50%);
@@ -162,6 +180,7 @@
       height: 58px;
 
       border: 0;
+
       border-radius: 30px 0 0 30px;
 
       background: rgba(255, 255, 255, 0.95);
@@ -171,7 +190,9 @@
       font-size: 27px;
 
       display: flex;
+
       align-items: center;
+
       justify-content: center;
 
       cursor: pointer;
@@ -240,13 +261,13 @@
 
       uiScanning: #scanning;
 
-      filterMinCF: 0.0005;
+      filterMinCF: 0.0001;
 
-      filterBeta: 1200;
+      filterBeta: 500;
 
-      warmupTolerance: 8;
+      warmupTolerance: 10;
 
-      missTolerance: 12;
+      missTolerance: 15;
 
       maxTrack: 1;
     "
@@ -396,7 +417,6 @@
 
       <!-- =========================
            AR VIDEO
-           已调整尺寸和位置
       ========================= -->
 
       <a-video
@@ -799,7 +819,9 @@
       showVideo();
 
 
-      /* 视频 */
+      /* =========================
+         视频
+      ========================= */
 
       try {
 
@@ -820,11 +842,6 @@
 
         }
 
-
-        console.log(
-          "视频播放成功"
-        );
-
       }
 
       catch (error) {
@@ -838,7 +855,9 @@
 
 
 
-      /* 音乐 */
+      /* =========================
+         音乐
+      ========================= */
 
       try {
 
@@ -865,11 +884,6 @@
           audio.volume = 0;
 
         }
-
-
-        console.log(
-          "音乐状态已更新"
-        );
 
       }
 
@@ -930,7 +944,7 @@
 
           },
 
-          800
+          1000
         );
 
     }
@@ -967,7 +981,9 @@
 
 
 
-        /* 先解锁音乐 */
+        /* =========================
+           先解锁音乐
+        ========================= */
 
         try {
 
@@ -991,11 +1007,6 @@
 
           audioUnlocked = true;
 
-
-          console.log(
-            "音乐权限解锁成功"
-          );
-
         }
 
         catch (error) {
@@ -1012,7 +1023,9 @@
 
 
 
-        /* 启动 MindAR */
+        /* =========================
+           启动 MindAR
+        ========================= */
 
         try {
 
@@ -1274,7 +1287,7 @@
 
 
     /* =========================
-       初始化按钮
+       初始化音乐按钮
     ========================= */
 
     updateMusicButton();
