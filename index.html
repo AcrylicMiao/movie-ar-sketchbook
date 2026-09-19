@@ -9,12 +9,10 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   >
 
-  <title>楚门的世界 · AR Sketch Book V7 Smooth</title>
+  <title>楚门的世界 · AR Sketch Book V8</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -26,18 +24,11 @@
     body {
       margin: 0;
       padding: 0;
-
       width: 100%;
       height: 100%;
-
       overflow: hidden;
-
       background: #000;
-
-      font-family:
-        Arial,
-        "Microsoft YaHei",
-        sans-serif;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
     }
 
     body {
@@ -46,26 +37,14 @@
 
     a-scene {
       position: fixed;
-
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-
+      inset: 0;
       width: 100%;
       height: 100%;
     }
 
-
-    /* =========================
-       顶部 UI
-    ========================= */
-
     #ui {
       position: fixed;
-
       z-index: 50;
-
       left: 0;
       right: 0;
       top: 0;
@@ -76,11 +55,8 @@
         18px;
 
       display: flex;
-
       flex-direction: column;
-
       align-items: center;
-
       gap: 10px;
 
       pointer-events: none;
@@ -90,40 +66,26 @@
       pointer-events: auto;
 
       border: 0;
-
       border-radius: 999px;
-
       padding: 13px 24px;
 
       font-size: 16px;
 
       background: #fff;
-
       color: #111;
 
       box-shadow:
         0 5px 25px rgba(0, 0, 0, 0.45);
 
       cursor: pointer;
-
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    #start:active {
-      transform: scale(0.97);
     }
 
     #status {
       color: #fff;
-
       text-align: center;
 
       font-size: 14px;
-
       line-height: 1.5;
-
-      text-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.9);
 
       background:
         rgba(0, 0, 0, 0.4);
@@ -134,11 +96,6 @@
 
       max-width: 90%;
     }
-
-
-    /* =========================
-       底部提示
-    ========================= */
 
     #hint {
       position: fixed;
@@ -157,18 +114,8 @@
 
       font-size: 13px;
 
-      line-height: 1.5;
-
-      text-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.95);
-
       pointer-events: none;
     }
-
-
-    /* =========================
-       音乐按钮
-    ========================= */
 
     #musicBtn {
       position: fixed;
@@ -176,7 +123,6 @@
       z-index: 60;
 
       right: 0;
-
       top: 74%;
 
       transform: translateY(-50%);
@@ -200,19 +146,6 @@
       align-items: center;
 
       justify-content: center;
-
-      cursor: pointer;
-
-      box-shadow:
-        0 4px 15px rgba(0, 0, 0, 0.25);
-
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    #musicBtn:active {
-      transform:
-        translateY(-50%)
-        scale(0.95);
     }
 
     #scanning {
@@ -223,9 +156,135 @@
 
   <script>
 
-    /* =====================================================
-       二次平滑组件
-    ===================================================== */
+    /* =========================================
+       自定义视频纹理
+    ========================================= */
+
+    AFRAME.registerComponent(
+      "video-texture",
+      {
+
+        schema: {
+          src: {
+            type: "selector"
+          }
+        },
+
+        init: function () {
+
+          const video =
+            this.data.src;
+
+
+          const applyTexture =
+            () => {
+
+              const mesh =
+                this.el.getObject3D("mesh");
+
+
+              if (
+                !mesh ||
+                !video
+              ) {
+
+                return;
+
+              }
+
+
+              const texture =
+                new THREE.VideoTexture(
+                  video
+                );
+
+
+              texture.minFilter =
+                THREE.LinearFilter;
+
+
+              texture.magFilter =
+                THREE.LinearFilter;
+
+
+              texture.format =
+                THREE.RGBAFormat;
+
+
+              texture.colorSpace =
+                THREE.SRGBColorSpace;
+
+
+              const material =
+                new THREE.MeshBasicMaterial({
+
+                  map: texture,
+
+                  side:
+                    THREE.DoubleSide,
+
+                  toneMapped:
+                    false
+
+                });
+
+
+              mesh.material =
+                material;
+
+
+              this.texture =
+                texture;
+
+            };
+
+
+          if (
+            this.el.getObject3D("mesh")
+          ) {
+
+            applyTexture();
+
+          }
+
+          else {
+
+            this.el.addEventListener(
+              "object3dset",
+              applyTexture,
+              {
+                once: true
+              }
+            );
+
+          }
+
+        },
+
+
+        tick: function () {
+
+          if (
+            this.texture &&
+            this.data.src &&
+            this.data.src.readyState >= 2
+          ) {
+
+            this.texture.needsUpdate =
+              true;
+
+          }
+
+        }
+
+      }
+    );
+
+
+
+    /* =========================================
+       二次平滑
+    ========================================= */
 
     AFRAME.registerComponent(
       "smooth-follow",
@@ -257,36 +316,52 @@
           this.targetPosition =
             new THREE.Vector3();
 
+
           this.targetQuaternion =
             new THREE.Quaternion();
 
+
           this.targetScale =
-            new THREE.Vector3(1, 1, 1);
+            new THREE.Vector3(
+              1,
+              1,
+              1
+            );
 
 
           this.currentPosition =
             new THREE.Vector3();
 
+
           this.currentQuaternion =
             new THREE.Quaternion();
 
+
           this.currentScale =
-            new THREE.Vector3(1, 1, 1);
+            new THREE.Vector3(
+              1,
+              1,
+              1
+            );
 
 
-          this.initialized = false;
+          this.initialized =
+            false;
 
-          this.enabledTracking = false;
+
+          this.enabledTracking =
+            false;
 
 
           this.el.addEventListener(
             "smoothStart",
-
             () => {
 
-              this.enabledTracking = true;
+              this.enabledTracking =
+                true;
 
-              this.initialized = false;
+              this.initialized =
+                false;
 
             }
           );
@@ -294,10 +369,10 @@
 
           this.el.addEventListener(
             "smoothStop",
-
             () => {
 
-              this.enabledTracking = false;
+              this.enabledTracking =
+                false;
 
             }
           );
@@ -355,7 +430,8 @@
             );
 
 
-            this.initialized = true;
+            this.initialized =
+              true;
 
           }
 
@@ -408,10 +484,6 @@
 <body>
 
 
-  <!-- =========================
-       UI
-  ========================= -->
-
   <div id="ui">
 
     <button id="start">
@@ -438,10 +510,6 @@
   <div id="scanning"></div>
 
 
-
-  <!-- =========================
-       AR SCENE
-  ========================= -->
 
   <a-scene
 
@@ -476,22 +544,18 @@
     device-orientation-permission-ui="enabled: false"
 
     embedded
+
   >
 
-
-    <!-- =========================
-         ASSETS
-    ========================= -->
 
     <a-assets>
 
 
-      <!-- 新视频 -->
       <video
 
         id="arVideo"
 
-        src="./video/truman_portal.mp4?v=6"
+        src="./video/truman_portal.mp4?v=7"
 
         preload="auto"
 
@@ -508,7 +572,6 @@
       ></video>
 
 
-      <!-- 原创音乐 -->
       <audio
 
         id="arAudio"
@@ -526,10 +589,6 @@
 
 
 
-    <!-- =========================
-         CAMERA
-    ========================= -->
-
     <a-camera
 
       position="0 0 0"
@@ -539,10 +598,6 @@
     ></a-camera>
 
 
-
-    <!-- =========================
-         MindAR 识别锚点
-    ========================= -->
 
     <a-entity
 
@@ -555,10 +610,6 @@
     ></a-entity>
 
 
-
-    <!-- =========================
-         平滑后的 AR 内容
-    ========================= -->
 
     <a-entity
 
@@ -576,14 +627,9 @@
     >
 
 
-
-      <!-- =========================
-           后方阴影
-      ========================= -->
+      <!-- 后方阴影 -->
 
       <a-plane
-
-        id="shadow"
 
         position="
           0.17
@@ -606,13 +652,9 @@
 
 
 
-      <!-- =========================
-           门后空间
-      ========================= -->
+      <!-- 门后背景 -->
 
       <a-box
-
-        id="portalBack"
 
         position="
           0.26
@@ -635,12 +677,10 @@
 
 
 
-      <!-- =========================
-           视频平面
-
-           改成 a-plane + material src
-           尺寸和位置完全不变
-      ========================= -->
+      <!-- =================================
+           视频
+           尺寸保持原样
+      ================================= -->
 
       <a-plane
 
@@ -649,30 +689,22 @@
         position="
           0.260
           0.135
-          0.125
+          0.126
         "
 
         width="0.320"
 
         height="0.540"
 
-        visible="true"
-
-        material="
-          shader: flat;
+        video-texture="
           src: #arVideo;
-          side: double;
-          transparent: false;
-          opacity: 1;
         "
 
       ></a-plane>
 
 
 
-      <!-- =========================
-           左门框
-      ========================= -->
+      <!-- 左门框 -->
 
       <a-box
 
@@ -697,9 +729,7 @@
 
 
 
-      <!-- =========================
-           右门框
-      ========================= -->
+      <!-- 右门框 -->
 
       <a-box
 
@@ -724,9 +754,7 @@
 
 
 
-      <!-- =========================
-           顶部门框
-      ========================= -->
+      <!-- 顶部门框 -->
 
       <a-box
 
@@ -751,9 +779,7 @@
 
 
 
-      <!-- =========================
-           第一层台阶
-      ========================= -->
+      <!-- 第一层台阶 -->
 
       <a-box
 
@@ -778,9 +804,7 @@
 
 
 
-      <!-- =========================
-           第二层台阶
-      ========================= -->
+      <!-- 第二层台阶 -->
 
       <a-box
 
@@ -805,13 +829,9 @@
 
 
 
-      <!-- =========================
-           粒子 1
-      ========================= -->
+      <!-- 粒子 1 -->
 
       <a-sphere
-
-        class="particle"
 
         position="
           -0.02
@@ -841,13 +861,9 @@
 
 
 
-      <!-- =========================
-           粒子 2
-      ========================= -->
+      <!-- 粒子 2 -->
 
       <a-sphere
-
-        class="particle"
 
         position="
           0.53
@@ -877,13 +893,9 @@
 
 
 
-      <!-- =========================
-           粒子 3
-      ========================= -->
+      <!-- 粒子 3 -->
 
       <a-sphere
-
-        class="particle"
 
         position="
           0.58
@@ -919,12 +931,7 @@
 
 
 
-  <!-- =========================
-       JAVASCRIPT
-  ========================= -->
-
   <script>
-
 
     const scene =
       document.querySelector("a-scene");
@@ -958,77 +965,60 @@
       document.querySelector("#musicBtn");
 
 
-
-    let started = false;
-
-
-    let targetVisible = false;
+    let started =
+      false;
 
 
-    let hideTimer = null;
+    let targetVisible =
+      false;
 
 
-    let audioUnlocked = false;
+    let hideTimer =
+      null;
 
 
-    let musicEnabled = true;
+    let audioUnlocked =
+      false;
 
 
-
-    /* =========================
-       基础设置
-    ========================= */
-
-    video.muted = true;
-
-
-    video.playsInline = true;
-
-
-    audio.loop = true;
-
-
-    audio.volume = 0;
+    let musicEnabled =
+      true;
 
 
 
-    /* =========================
-       音乐按钮
-    ========================= */
+    video.muted =
+      true;
+
+
+    video.playsInline =
+      true;
+
+
+    audio.loop =
+      true;
+
+
+    audio.volume =
+      0;
+
+
 
     function updateMusicButton() {
 
-      if (
+      musicBtn.textContent =
         musicEnabled
-      ) {
-
-        musicBtn.textContent =
-          "♪";
+          ? "♪"
+          : "×";
 
 
-        musicBtn.style.opacity =
-          "1";
-
-      }
-
-      else {
-
-        musicBtn.textContent =
-          "×";
-
-
-        musicBtn.style.opacity =
-          "0.65";
-
-      }
+      musicBtn.style.opacity =
+        musicEnabled
+          ? "1"
+          : "0.65";
 
     }
 
 
-
-    /* =========================
-       清除隐藏计时器
-    ========================= */
 
     function clearHideTimer() {
 
@@ -1041,17 +1031,14 @@
         );
 
 
-        hideTimer = null;
+        hideTimer =
+          null;
 
       }
 
     }
 
 
-
-    /* =========================
-       显示 AR 内容
-    ========================= */
 
     function showContent() {
 
@@ -1072,27 +1059,21 @@
 
 
 
-    /* =========================
-       播放视频 + 音乐
-    ========================= */
-
     async function playARContent() {
-
 
       showContent();
 
 
-
-      /* =========================
-         视频
-      ========================= */
+      /* 视频 */
 
       try {
 
-        video.muted = true;
+        video.muted =
+          true;
 
 
-        video.playsInline = true;
+        video.playsInline =
+          true;
 
 
         if (
@@ -1104,21 +1085,23 @@
         }
 
 
-        const playPromise =
+        const p =
           video.play();
 
 
         if (
-          playPromise !== undefined
+          p !== undefined
         ) {
 
-          await playPromise;
+          await p;
 
         }
 
 
         console.log(
-          "视频播放成功"
+          "VIDEO PLAYING",
+          video.readyState,
+          video.currentTime
         );
 
       }
@@ -1126,7 +1109,7 @@
       catch (error) {
 
         console.warn(
-          "视频播放失败：",
+          "VIDEO ERROR",
           error
         );
 
@@ -1134,9 +1117,7 @@
 
 
 
-      /* =========================
-         音乐
-      ========================= */
+      /* 音乐 */
 
       try {
 
@@ -1145,7 +1126,8 @@
           musicEnabled
         ) {
 
-          audio.volume = 1;
+          audio.volume =
+            1;
 
 
           if (
@@ -1160,7 +1142,8 @@
 
         else {
 
-          audio.volume = 0;
+          audio.volume =
+            0;
 
         }
 
@@ -1169,7 +1152,7 @@
       catch (error) {
 
         console.warn(
-          "音乐播放失败：",
+          "AUDIO ERROR",
           error
         );
 
@@ -1179,26 +1162,18 @@
 
 
 
-    /* =========================
-       延迟隐藏
-    ========================= */
-
     function hideARDelayed() {
-
 
       clearHideTimer();
 
 
       hideTimer =
         setTimeout(
-
           () => {
-
 
             if (
               !targetVisible
             ) {
-
 
               contentRoot.emit(
                 "smoothStop"
@@ -1222,7 +1197,8 @@
 
               try {
 
-                audio.volume = 0;
+                audio.volume =
+                  0;
 
               }
 
@@ -1232,7 +1208,6 @@
 
           },
 
-
           1200
         );
 
@@ -1240,16 +1215,10 @@
 
 
 
-    /* =========================
-       开始 AR
-    ========================= */
-
     startBtn.addEventListener(
-
       "click",
 
       async () => {
-
 
         if (
           started
@@ -1260,7 +1229,8 @@
         }
 
 
-        started = true;
+        started =
+          true;
 
 
         startBtn.style.display =
@@ -1272,42 +1242,71 @@
 
 
 
-        /* =========================
-           解锁音乐
-        ========================= */
+        /* 音乐解锁 */
 
         try {
 
-          audio.volume = 0;
+          audio.volume =
+            0;
 
 
-          audio.loop = true;
+          await audio.play();
 
 
-          const audioPromise =
-            audio.play();
-
-
-          if (
-            audioPromise !== undefined
-          ) {
-
-            await audioPromise;
-
-          }
-
-
-          audioUnlocked = true;
+          audioUnlocked =
+            true;
 
         }
 
         catch (error) {
 
-          audioUnlocked = false;
+          audioUnlocked =
+            false;
 
+        }
+
+
+
+        /* 视频预热 */
+
+        try {
+
+          video.muted =
+            true;
+
+
+          video.playsInline =
+            true;
+
+
+          video.load();
+
+
+          const videoUnlock =
+            video.play();
+
+
+          if (
+            videoUnlock !== undefined
+          ) {
+
+            await videoUnlock;
+
+          }
+
+
+          video.pause();
+
+
+          video.currentTime =
+            0;
+
+        }
+
+        catch (error) {
 
           console.warn(
-            "音乐权限解锁失败：",
+            "VIDEO UNLOCK ERROR",
             error
           );
 
@@ -1315,27 +1314,7 @@
 
 
 
-        /* =========================
-           顺便预热视频
-        ========================= */
-
-        try {
-
-          video.muted = true;
-
-          video.playsInline = true;
-
-          video.load();
-
-        }
-
-        catch (e) {}
-
-
-
-        /* =========================
-           启动 MindAR
-        ========================= */
+        /* 启动 MindAR */
 
         try {
 
@@ -1361,14 +1340,15 @@
 
 
           status.textContent =
-            "无法启动摄像头，请检查浏览器权限并使用 HTTPS 网页";
+            "无法启动摄像头，请检查浏览器权限";
 
 
           startBtn.style.display =
             "block";
 
 
-          started = false;
+          started =
+            false;
 
         }
 
@@ -1378,21 +1358,16 @@
 
 
 
-    /* =========================
-       识别成功
-    ========================= */
-
     target.addEventListener(
-
       "targetFound",
 
       async () => {
 
-
         clearHideTimer();
 
 
-        targetVisible = true;
+        targetVisible =
+          true;
 
 
         status.textContent =
@@ -1407,18 +1382,13 @@
 
 
 
-    /* =========================
-       暂时丢失目标
-    ========================= */
-
     target.addEventListener(
-
       "targetLost",
 
       () => {
 
-
-        targetVisible = false;
+        targetVisible =
+          false;
 
 
         status.textContent =
@@ -1433,16 +1403,10 @@
 
 
 
-    /* =========================
-       音乐按钮
-    ========================= */
-
     musicBtn.addEventListener(
-
       "click",
 
       async () => {
-
 
         musicEnabled =
           !musicEnabled;
@@ -1451,62 +1415,46 @@
         updateMusicButton();
 
 
-
         if (
           !musicEnabled
         ) {
 
-          audio.volume = 0;
+          audio.volume =
+            0;
+
 
           return;
 
         }
 
 
-
         try {
-
 
           if (
             !audioUnlocked
           ) {
 
-            audio.volume = 0;
+            audio.volume =
+              0;
 
 
             await audio.play();
 
 
-            audioUnlocked = true;
+            audioUnlocked =
+              true;
 
           }
 
 
-
-          if (
+          audio.volume =
             targetVisible
-          ) {
-
-            audio.volume = 1;
-
-          }
-
-          else {
-
-            audio.volume = 0;
-
-          }
+              ? 1
+              : 0;
 
         }
 
-        catch (error) {
-
-          console.warn(
-            "音乐按钮播放失败：",
-            error
-          );
-
-        }
+        catch (error) {}
 
       }
 
@@ -1514,16 +1462,10 @@
 
 
 
-    /* =========================
-       页面隐藏
-    ========================= */
-
     document.addEventListener(
-
       "visibilitychange",
 
       () => {
-
 
         if (
           document.hidden
@@ -1540,14 +1482,14 @@
 
           try {
 
-            audio.volume = 0;
+            audio.volume =
+              0;
 
           }
 
           catch (e) {}
 
         }
-
 
         else if (
           targetVisible
@@ -1563,16 +1505,10 @@
 
 
 
-    /* =========================
-       页面关闭
-    ========================= */
-
     window.addEventListener(
-
       "beforeunload",
 
       () => {
-
 
         try {
 
@@ -1607,13 +1543,7 @@
     );
 
 
-
-    /* =========================
-       初始化
-    ========================= */
-
     updateMusicButton();
-
 
   </script>
 
