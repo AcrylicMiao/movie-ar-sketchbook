@@ -9,7 +9,7 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   >
 
-  <title>楚门的世界 · AR Sketch Book V6 Smooth</title>
+  <title>楚门的世界 · AR Sketch Book V7 Smooth</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -215,7 +215,6 @@
         scale(0.95);
     }
 
-
     #scanning {
       display: none;
     }
@@ -226,15 +225,6 @@
 
     /* =====================================================
        二次平滑组件
-       =====================================================
-
-       MindAR 只负责给 #targetAnchor 计算位置。
-
-       真正显示的 AR 内容放在 #contentRoot。
-
-       contentRoot 不直接继承 target 的抖动，
-       而是每一帧缓慢跟随。
-
     ===================================================== */
 
     AFRAME.registerComponent(
@@ -289,26 +279,12 @@
           this.enabledTracking = false;
 
 
-          /*
-            对外提供方法
-
-            targetFound 时开启
-            targetLost 时停止继续更新
-          */
-
           this.el.addEventListener(
             "smoothStart",
 
             () => {
 
               this.enabledTracking = true;
-
-              /*
-                每次重新识别时
-                第一帧直接吸附过去
-
-                防止从旧位置慢慢飞过去
-              */
 
               this.initialized = false;
 
@@ -345,10 +321,6 @@
             this.data.target.object3D;
 
 
-          /*
-            获取 MindAR 当前世界位置
-          */
-
           targetObject.getWorldPosition(
             this.targetPosition
           );
@@ -363,12 +335,6 @@
             this.targetScale
           );
 
-
-          /*
-            第一次识别时
-            不做缓动
-            直接贴到正确位置
-          */
 
           if (
             !this.initialized
@@ -395,39 +361,17 @@
 
           else {
 
-            /*
-              =========================
-              位置平滑
-              =========================
-
-              数字越小：
-              越稳
-              但跟随越慢
-            */
-
             this.currentPosition.lerp(
               this.targetPosition,
               this.data.positionSmooth
             );
 
 
-            /*
-              =========================
-              旋转平滑
-              =========================
-            */
-
             this.currentQuaternion.slerp(
               this.targetQuaternion,
               this.data.rotationSmooth
             );
 
-
-            /*
-              =========================
-              缩放平滑
-              =========================
-            */
 
             this.currentScale.lerp(
               this.targetScale,
@@ -436,11 +380,6 @@
 
           }
 
-
-          /*
-            把平滑后的数据
-            应用到真正 AR 内容
-          */
 
           this.el.object3D.position.copy(
             this.currentPosition
@@ -492,7 +431,7 @@
 
 
   <div id="hint">
-    尽量让整张绘本进入镜头，识别后保持稳定
+    尽量让整张绘本进入镜头，慢慢移动手机；识别后保持稳定
   </div>
 
 
@@ -547,16 +486,12 @@
     <a-assets>
 
 
-      <!-- =========================
-           新视频
-           已换成 v=5
-      ========================= -->
-
+      <!-- 新视频 -->
       <video
 
         id="arVideo"
 
-        src="./video/truman_portal.mp4?v=5"
+        src="./video/truman_portal.mp4?v=6"
 
         preload="auto"
 
@@ -573,10 +508,7 @@
       ></video>
 
 
-      <!-- =========================
-           原创音乐
-      ========================= -->
-
+      <!-- 原创音乐 -->
       <audio
 
         id="arAudio"
@@ -608,15 +540,9 @@
 
 
 
-    <!-- =====================================================
+    <!-- =========================
          MindAR 识别锚点
-
-         注意：
-
-         这里不再放门、视频、台阶！
-
-         它只负责追踪。
-    ===================================================== -->
+    ========================= -->
 
     <a-entity
 
@@ -630,14 +556,9 @@
 
 
 
-    <!-- =====================================================
-         真正显示的 AR 内容
-
-         这个节点不直接挂到 MindAR target 下面。
-
-         它通过 smooth-follow
-         平滑跟随 targetAnchor。
-    ===================================================== -->
+    <!-- =========================
+         平滑后的 AR 内容
+    ========================= -->
 
     <a-entity
 
@@ -715,16 +636,15 @@
 
 
       <!-- =========================
-           AR VIDEO
+           视频平面
 
-           尺寸保持不变
+           改成 a-plane + material src
+           尺寸和位置完全不变
       ========================= -->
 
-      <a-video
+      <a-plane
 
         id="videoPlane"
-
-        src="#arVideo"
 
         position="
           0.260
@@ -740,11 +660,13 @@
 
         material="
           shader: flat;
+          src: #arVideo;
+          side: double;
           transparent: false;
           opacity: 1;
         "
 
-      ></a-video>
+      ></a-plane>
 
 
 
@@ -997,9 +919,9 @@
 
 
 
-  <!-- =====================================================
+  <!-- =========================
        JAVASCRIPT
-  ===================================================== -->
+  ========================= -->
 
   <script>
 
@@ -1071,7 +993,7 @@
 
 
     /* =========================
-       更新音乐按钮
+       音乐按钮
     ========================= */
 
     function updateMusicButton() {
@@ -1142,10 +1064,6 @@
       );
 
 
-      /*
-        开启二次平滑追踪
-      */
-
       contentRoot.emit(
         "smoothStart"
       );
@@ -1177,6 +1095,15 @@
         video.playsInline = true;
 
 
+        if (
+          video.readyState < 2
+        ) {
+
+          video.load();
+
+        }
+
+
         const playPromise =
           video.play();
 
@@ -1188,6 +1115,11 @@
           await playPromise;
 
         }
+
+
+        console.log(
+          "视频播放成功"
+        );
 
       }
 
@@ -1268,18 +1200,10 @@
             ) {
 
 
-              /*
-                停止更新追踪位置
-              */
-
               contentRoot.emit(
                 "smoothStop"
               );
 
-
-              /*
-                隐藏真正 AR 内容
-              */
 
               contentRoot.setAttribute(
                 "visible",
@@ -1295,14 +1219,6 @@
 
               catch (e) {}
 
-
-              /*
-                音乐不 pause
-                只静音
-
-                避免移动浏览器
-                再次阻止播放
-              */
 
               try {
 
@@ -1357,8 +1273,7 @@
 
 
         /* =========================
-           用户点击时
-           先解锁音乐
+           解锁音乐
         ========================= */
 
         try {
@@ -1397,6 +1312,24 @@
           );
 
         }
+
+
+
+        /* =========================
+           顺便预热视频
+        ========================= */
+
+        try {
+
+          video.muted = true;
+
+          video.playsInline = true;
+
+          video.load();
+
+        }
+
+        catch (e) {}
 
 
 
@@ -1492,13 +1425,6 @@
           "正在稳定追踪绘本…";
 
 
-        /*
-          不立即消失
-
-          给追踪器 1.2 秒
-          自己重新找到目标
-        */
-
         hideARDelayed();
 
       }
@@ -1540,13 +1466,6 @@
 
         try {
 
-
-          /*
-            如果第一次解锁失败
-
-            用户点击音乐按钮本身
-            也属于主动操作
-          */
 
           if (
             !audioUnlocked
