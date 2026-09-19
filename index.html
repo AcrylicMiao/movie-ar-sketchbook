@@ -9,7 +9,7 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   >
 
-  <title>楚门的世界 · AR Sketch Book V3</title>
+  <title>楚门的世界 · AR Sketch Book V4</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -56,8 +56,9 @@
       height: 100%;
     }
 
+
     /* =========================
-       UI
+       顶部 UI
     ========================= */
 
     #ui {
@@ -134,6 +135,11 @@
       max-width: 90%;
     }
 
+
+    /* =========================
+       底部提示
+    ========================= */
+
     #hint {
       position: fixed;
 
@@ -157,6 +163,55 @@
         0 2px 8px rgba(0, 0, 0, 0.95);
 
       pointer-events: none;
+    }
+
+
+    /* =========================
+       音乐按钮
+    ========================= */
+
+    #musicBtn {
+      position: fixed;
+
+      z-index: 60;
+
+      right: 0;
+
+      top: 74%;
+
+      transform: translateY(-50%);
+
+      width: 58px;
+      height: 58px;
+
+      border: 0;
+
+      border-radius: 30px 0 0 30px;
+
+      background: rgba(255, 255, 255, 0.95);
+
+      color: #13c98a;
+
+      font-size: 27px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.25);
+
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #musicBtn:active {
+      transform:
+        translateY(-50%)
+        scale(0.95);
     }
 
     #scanning {
@@ -183,6 +238,11 @@
     </div>
 
   </div>
+
+
+  <button id="musicBtn">
+    ♪
+  </button>
 
 
   <div id="hint">
@@ -238,18 +298,12 @@
 
     <a-assets>
 
-      <!--
-        新视频
-        GitHub路径：
-
-        video/truman_portal.mp4
-      -->
-
+      <!-- AR 视频 -->
       <video
 
         id="arVideo"
 
-        src="./video/truman_portal.mp4?v=3"
+        src="./video/truman_portal.mp4?v=4"
 
         preload="auto"
 
@@ -267,14 +321,15 @@
 
 
       <!-- 原创音乐 -->
-
       <audio
 
         id="arAudio"
 
-        src="./music/truman.wav?v=3"
+        src="./music/truman.wav?v=4"
 
         preload="auto"
+
+        loop
 
       ></audio>
 
@@ -367,7 +422,6 @@
 
       <!-- =========================
            AR VIDEO
-           关键部分
       ========================= -->
 
       <a-video
@@ -645,29 +699,26 @@
     const scene =
       document.querySelector("a-scene");
 
-
     const target =
       document.querySelector("#target");
-
 
     const video =
       document.querySelector("#arVideo");
 
-
     const audio =
       document.querySelector("#arAudio");
-
 
     const plane =
       document.querySelector("#videoPlane");
 
-
     const startBtn =
       document.querySelector("#start");
 
-
     const status =
       document.querySelector("#status");
+
+    const musicBtn =
+      document.querySelector("#musicBtn");
 
 
     let started = false;
@@ -675,6 +726,50 @@
     let targetVisible = false;
 
     let hideTimer = null;
+
+    let audioUnlocked = false;
+
+    let musicEnabled = true;
+
+
+    /* =========================
+       基础设置
+    ========================= */
+
+    video.muted = true;
+
+    video.playsInline = true;
+
+    audio.loop = true;
+
+    audio.volume = 0;
+
+
+
+    /* =========================
+       音乐按钮状态
+    ========================= */
+
+    function updateMusicButton() {
+
+      if (musicEnabled) {
+
+        musicBtn.textContent = "♪";
+
+        musicBtn.style.opacity = "1";
+
+      }
+
+      else {
+
+        musicBtn.textContent = "×";
+
+        musicBtn.style.opacity = "0.65";
+
+      }
+
+    }
+
 
 
     /* =========================
@@ -694,6 +789,7 @@
     }
 
 
+
     /* =========================
        显示视频
     ========================= */
@@ -704,20 +800,10 @@
 
       targetVisible = true;
 
-
-      /*
-        关键：
-
-        不是 opacity 0 → 1
-
-        而是直接 visible true。
-      */
-
       plane.setAttribute(
         "visible",
         true
       );
-
 
       plane.setAttribute(
         "material",
@@ -728,52 +814,164 @@
     }
 
 
+
     /* =========================
-       隐藏视频
+       播放 AR 内容
     ========================= */
 
-    function hideVideoDelayed() {
+    async function playARContent() {
+
+      showVideo();
+
+
+      /* =========================
+         视频
+      ========================= */
+
+      try {
+
+        video.muted = true;
+
+        video.playsInline = true;
+
+
+        const playPromise =
+          video.play();
+
+
+        if (
+          playPromise !== undefined
+        ) {
+
+          await playPromise;
+
+        }
+
+
+        console.log(
+          "视频播放成功"
+        );
+
+      }
+
+      catch (error) {
+
+        console.warn(
+          "视频播放失败：",
+          error
+        );
+
+      }
+
+
+
+      /* =========================
+         音乐
+      ========================= */
+
+      try {
+
+        if (
+          audioUnlocked &&
+          musicEnabled
+        ) {
+
+          audio.volume = 1;
+
+
+          if (
+            audio.paused
+          ) {
+
+            await audio.play();
+
+          }
+
+        }
+
+        else {
+
+          audio.volume = 0;
+
+        }
+
+
+        console.log(
+          "音乐状态已更新"
+        );
+
+      }
+
+      catch (error) {
+
+        console.warn(
+          "音乐播放失败：",
+          error
+        );
+
+      }
+
+    }
+
+
+
+    /* =========================
+       延迟隐藏 AR
+    ========================= */
+
+    function hideARDelayed() {
 
       clearHideTimer();
 
 
-      /*
-        目标短暂丢失时
-        不立即消失。
+      hideTimer =
+        setTimeout(
+          () => {
 
-        延迟 1000ms。
-      */
+            if (
+              !targetVisible
+            ) {
 
-      hideTimer = setTimeout(
-        () => {
+              plane.setAttribute(
+                "visible",
+                false
+              );
 
-          if (!targetVisible) {
 
-            plane.setAttribute(
-              "visible",
-              false
-            );
+              try {
 
-            try {
+                video.pause();
 
-              video.pause();
+              }
 
-            } catch (e) {}
+              catch (e) {}
 
-            try {
 
-              audio.pause();
+              /*
+                音乐不要 pause
 
-            } catch (e) {}
+                只设为静音
 
-          }
+                避免浏览器重新阻止播放
+              */
 
-        },
+              try {
 
-        1000
-      );
+                audio.volume = 0;
+
+              }
+
+              catch (e) {}
+
+            }
+
+          },
+
+          800
+        );
 
     }
+
 
 
     /* =========================
@@ -785,8 +983,12 @@
 
       async () => {
 
-        if (started) {
+        if (
+          started
+        ) {
+
           return;
+
         }
 
 
@@ -800,6 +1002,58 @@
         status.textContent =
           "正在启动 AR，请允许摄像头权限…";
 
+
+
+        /* =========================
+           先解锁音乐
+        ========================= */
+
+        try {
+
+          audio.volume = 0;
+
+          audio.loop = true;
+
+
+          const audioPromise =
+            audio.play();
+
+
+          if (
+            audioPromise !== undefined
+          ) {
+
+            await audioPromise;
+
+          }
+
+
+          audioUnlocked = true;
+
+
+          console.log(
+            "音乐权限解锁成功"
+          );
+
+        }
+
+        catch (error) {
+
+          audioUnlocked = false;
+
+
+          console.warn(
+            "音乐权限解锁失败：",
+            error
+          );
+
+        }
+
+
+
+        /* =========================
+           启动 MindAR
+        ========================= */
 
         try {
 
@@ -815,8 +1069,9 @@
           status.textContent =
             "AR 已启动：请扫描你的 Sketch Book";
 
+        }
 
-        } catch (error) {
+        catch (error) {
 
           console.error(
             error
@@ -839,6 +1094,7 @@
     );
 
 
+
     /* =========================
        目标识别成功
     ========================= */
@@ -858,87 +1114,12 @@
           "识别成功！《楚门的世界》AR 已启动";
 
 
-        /*
-          显示视频
-        */
-
-        showVideo();
-
-
-        /*
-          视频播放
-        */
-
-        try {
-
-          video.muted = true;
-
-          video.playsInline = true;
-
-
-          if (
-            video.readyState < 2
-          ) {
-
-            await new Promise(
-              resolve => {
-
-                const readyHandler =
-                  () => {
-
-                    video.removeEventListener(
-                      "loadeddata",
-                      readyHandler
-                    );
-
-                    resolve();
-
-                  };
-
-
-                video.addEventListener(
-                  "loadeddata",
-                  readyHandler
-                );
-
-              }
-            );
-
-          }
-
-
-          await video.play();
-
-        } catch (error) {
-
-          console.warn(
-            "Video play error:",
-            error
-          );
-
-        }
-
-
-        /*
-          音乐播放
-        */
-
-        try {
-
-          await audio.play();
-
-        } catch (error) {
-
-          console.warn(
-            "Audio play error:",
-            error
-          );
-
-        }
+        await playARContent();
 
       }
 
     );
+
 
 
     /* =========================
@@ -957,11 +1138,93 @@
         targetVisible = false;
 
 
-        hideVideoDelayed();
+        hideARDelayed();
 
       }
 
     );
+
+
+
+    /* =========================
+       音乐按钮
+    ========================= */
+
+    musicBtn.addEventListener(
+      "click",
+
+      async () => {
+
+        musicEnabled =
+          !musicEnabled;
+
+
+        updateMusicButton();
+
+
+        if (
+          !musicEnabled
+        ) {
+
+          audio.volume = 0;
+
+          return;
+
+        }
+
+
+        try {
+
+          /*
+            如果一开始浏览器没有成功解锁
+            用户点击音乐按钮本身
+            也是一次用户主动操作
+          */
+
+          if (
+            !audioUnlocked
+          ) {
+
+            audio.volume = 0;
+
+
+            await audio.play();
+
+
+            audioUnlocked = true;
+
+          }
+
+
+          if (
+            targetVisible
+          ) {
+
+            audio.volume = 1;
+
+          }
+
+          else {
+
+            audio.volume = 0;
+
+          }
+
+        }
+
+        catch (error) {
+
+          console.warn(
+            "音乐按钮播放失败：",
+            error
+          );
+
+        }
+
+      }
+
+    );
+
 
 
     /* =========================
@@ -981,20 +1244,37 @@
 
             video.pause();
 
-          } catch (e) {}
+          }
+
+          catch (e) {}
 
 
           try {
 
-            audio.pause();
+            audio.volume = 0;
 
-          } catch (e) {}
+          }
+
+          catch (e) {}
+
+        }
+
+        else {
+
+          if (
+            targetVisible
+          ) {
+
+            playARContent();
+
+          }
 
         }
 
       }
 
     );
+
 
 
     /* =========================
@@ -1010,14 +1290,18 @@
 
           video.pause();
 
-        } catch (e) {}
+        }
+
+        catch (e) {}
 
 
         try {
 
           audio.pause();
 
-        } catch (e) {}
+        }
+
+        catch (e) {}
 
 
         try {
@@ -1026,13 +1310,24 @@
             "mindar-image-system"
           ].stop();
 
-        } catch (e) {}
+        }
+
+        catch (e) {}
 
       }
 
     );
 
+
+
+    /* =========================
+       初始化按钮
+    ========================= */
+
+    updateMusicButton();
+
   </script>
 
 </body>
+
 </html>
