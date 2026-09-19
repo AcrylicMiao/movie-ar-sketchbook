@@ -1,151 +1,1038 @@
 <!doctype html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>楚门的世界 · AR Sketch Book V2</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  >
+
+  <title>楚门的世界 · AR Sketch Book V3</title>
+
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
   <style>
-    *{box-sizing:border-box}
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,"Microsoft YaHei",sans-serif}
-    #ui{position:fixed;z-index:20;left:0;right:0;top:0;padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
-    #start{pointer-events:auto;border:0;border-radius:999px;padding:13px 24px;font-size:16px;background:#fff;color:#111;box-shadow:0 5px 25px #0006;cursor:pointer}
-    #status{color:#fff;text-align:center;font-size:14px;text-shadow:0 2px 8px #000;background:#0006;padding:7px 12px;border-radius:12px}
-    #hint{position:fixed;z-index:20;left:16px;right:16px;bottom:24px;text-align:center;color:#fff;font-size:13px;text-shadow:0 2px 8px #000;pointer-events:none}
-    #scanning{display:none}
-    a-scene{position:fixed;inset:0}
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+
+      width: 100%;
+      height: 100%;
+
+      overflow: hidden;
+
+      background: #000;
+
+      font-family:
+        Arial,
+        "Microsoft YaHei",
+        sans-serif;
+    }
+
+    body {
+      overscroll-behavior: none;
+    }
+
+    a-scene {
+      position: fixed;
+
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+
+      width: 100%;
+      height: 100%;
+    }
+
+    /* =========================
+       UI
+    ========================= */
+
+    #ui {
+      position: fixed;
+
+      z-index: 50;
+
+      left: 0;
+      right: 0;
+      top: 0;
+
+      padding:
+        calc(18px + env(safe-area-inset-top))
+        18px
+        18px;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      gap: 10px;
+
+      pointer-events: none;
+    }
+
+    #start {
+      pointer-events: auto;
+
+      border: 0;
+
+      border-radius: 999px;
+
+      padding: 13px 24px;
+
+      font-size: 16px;
+
+      background: #fff;
+
+      color: #111;
+
+      box-shadow:
+        0 5px 25px rgba(0, 0, 0, 0.45);
+
+      cursor: pointer;
+
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #start:active {
+      transform: scale(0.97);
+    }
+
+    #status {
+      color: #fff;
+
+      text-align: center;
+
+      font-size: 14px;
+
+      line-height: 1.5;
+
+      text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.9);
+
+      background:
+        rgba(0, 0, 0, 0.4);
+
+      padding: 7px 12px;
+
+      border-radius: 12px;
+
+      max-width: 90%;
+    }
+
+    #hint {
+      position: fixed;
+
+      z-index: 50;
+
+      left: 16px;
+      right: 16px;
+
+      bottom:
+        calc(20px + env(safe-area-inset-bottom));
+
+      text-align: center;
+
+      color: #fff;
+
+      font-size: 13px;
+
+      line-height: 1.5;
+
+      text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.95);
+
+      pointer-events: none;
+    }
+
+    #scanning {
+      display: none;
+    }
   </style>
 </head>
+
+
 <body>
+
+  <!-- =========================
+       UI
+  ========================= -->
+
   <div id="ui">
-    <button id="start">开始 AR</button>
-    <div id="status">点击“开始 AR”，允许摄像头，然后对准你的 Sketch Book</div>
+
+    <button id="start">
+      开始 AR
+    </button>
+
+    <div id="status">
+      点击“开始 AR”，允许摄像头，然后对准你的 Sketch Book
+    </div>
+
   </div>
-  <div id="hint">尽量让整张绘本进入镜头，慢慢移动手机；识别后不要快速晃动</div>
+
+
+  <div id="hint">
+    尽量让整张绘本进入镜头，慢慢移动手机；识别后保持稳定
+  </div>
+
+
   <div id="scanning"></div>
 
+
+  <!-- =========================
+       AR SCENE
+  ========================= -->
+
   <a-scene
-    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: #scanning; filterMinCF: 0.0005; filterBeta: 1200; warmupTolerance: 8; missTolerance: 10; maxTrack: 1;"
+
+    mindar-image="
+      imageTargetSrc: ./targets.mind?v=3;
+
+      autoStart: false;
+
+      uiScanning: #scanning;
+
+      filterMinCF: 0.0005;
+
+      filterBeta: 1200;
+
+      warmupTolerance: 8;
+
+      missTolerance: 12;
+
+      maxTrack: 1;
+    "
+
     color-space="sRGB"
-    renderer="antialias: true; colorManagement: true; physicallyCorrectLights: false"
+
+    renderer="
+      antialias: true;
+      colorManagement: true;
+      physicallyCorrectLights: false;
+    "
+
     vr-mode-ui="enabled: false"
+
     device-orientation-permission-ui="enabled: false"
-    embedded>
+
+    embedded
+  >
+
+    <!-- =========================
+         ASSETS
+    ========================= -->
 
     <a-assets>
-      <!-- 裁切后的AR视频：只保留门和人物区域，减少整页覆盖造成的视觉抖动 -->
-      <video id="arVideo" src="./video/truman_portal.mp4" preload="auto" loop playsinline webkit-playsinline muted></video>
-      <audio id="arAudio" src="./music/truman.wav" preload="auto"></audio>
+
+      <!--
+        新视频
+        GitHub路径：
+
+        video/truman_portal.mp4
+      -->
+
+      <video
+
+        id="arVideo"
+
+        src="./video/truman_portal.mp4?v=3"
+
+        preload="auto"
+
+        loop
+
+        playsinline
+
+        webkit-playsinline
+
+        muted
+
+        crossorigin="anonymous"
+
+      ></video>
+
+
+      <!-- 原创音乐 -->
+
+      <audio
+
+        id="arAudio"
+
+        src="./music/truman.wav?v=3"
+
+        preload="auto"
+
+      ></audio>
+
     </a-assets>
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-entity id="target" mindar-image-target="targetIndex: 0">
-      <!-- 影子层：让AR内容从纸面“浮起来” -->
-      <a-plane id="shadow" position="0.17 0.105 0.045" width="0.63" height="0.67"
-        material="shader: flat; color: #071019; opacity: 0.30; transparent: true"></a-plane>
+    <!-- =========================
+         CAMERA
+    ========================= -->
 
-      <!-- 后层深度块 -->
-      <a-box id="portalBack" position="0.26 0.13 0.060" width="0.36" height="0.55" depth="0.10"
-        material="shader: flat; color: #10151C; opacity: 0.94; transparent: false"></a-box>
+    <a-camera
 
-      <!-- 动态视频层，位置与裁切区域对应 -->
-      <a-video id="videoPlane" src="#arVideo" position="0.16 0.117 0.125" width="0.597" height="0.635"
-        material="shader: flat; transparent: true; opacity: 0"></a-video>
+      position="0 0 0"
 
-      <!-- 微型3D门框：用厚度和前后层次制造空间感 -->
-      <a-box position="0.075 0.14 0.18" width="0.045" height="0.57" depth="0.095"
-        material="shader: flat; color: #171C24"></a-box>
-      <a-box position="0.445 0.14 0.18" width="0.045" height="0.57" depth="0.095"
-        material="shader: flat; color: #171C24"></a-box>
-      <a-box position="0.260 0.425 0.18" width="0.415" height="0.045" depth="0.095"
-        material="shader: flat; color: #171C24"></a-box>
+      look-controls="enabled: false"
 
-      <!-- 轻微前景台阶，增加“人物走出纸面”的感觉 -->
-      <a-box position="0.260 -0.162 0.17" width="0.29" height="0.045" depth="0.15"
-        material="shader: flat; color: #426C99; opacity: 0.95"></a-box>
+    ></a-camera>
 
-      <!-- 小型漂浮颗粒，保持克制，不喧宾夺主 -->
-      <a-sphere class="particle" position="-0.02 0.33 0.22" radius="0.009"
-        material="shader: flat; color: #D7F1FF; opacity: 0.70; transparent: true"
-        animation="property: position; to: 0.02 0.38 0.26; dur: 2200; dir: alternate; easing: easeInOutSine; loop: true"></a-sphere>
-      <a-sphere class="particle" position="0.53 0.24 0.20" radius="0.007"
-        material="shader: flat; color: #D7F1FF; opacity: 0.55; transparent: true"
-        animation="property: position; to: 0.50 0.30 0.25; dur: 2600; dir: alternate; easing: easeInOutSine; loop: true"></a-sphere>
-      <a-sphere class="particle" position="0.58 -0.04 0.20" radius="0.006"
-        material="shader: flat; color: #A9D7F2; opacity: 0.48; transparent: true"
-        animation="property: position; to: 0.55 0.02 0.24; dur: 2400; dir: alternate; easing: easeInOutSine; loop: true"></a-sphere>
+
+    <!-- =========================
+         IMAGE TARGET
+    ========================= -->
+
+    <a-entity
+
+      id="target"
+
+      mindar-image-target="
+        targetIndex: 0;
+      "
+
+    >
+
+
+      <!-- =========================
+           后方阴影
+      ========================= -->
+
+      <a-plane
+
+        id="shadow"
+
+        position="
+          0.17
+          0.105
+          0.045
+        "
+
+        width="0.63"
+
+        height="0.67"
+
+        material="
+          shader: flat;
+          color: #071019;
+          opacity: 0.30;
+          transparent: true;
+        "
+
+      ></a-plane>
+
+
+      <!-- =========================
+           门后空间
+      ========================= -->
+
+      <a-box
+
+        id="portalBack"
+
+        position="
+          0.26
+          0.13
+          0.060
+        "
+
+        width="0.36"
+
+        height="0.55"
+
+        depth="0.10"
+
+        material="
+          shader: flat;
+          color: #10151C;
+        "
+
+      ></a-box>
+
+
+      <!-- =========================
+           AR VIDEO
+           关键部分
+      ========================= -->
+
+      <a-video
+
+        id="videoPlane"
+
+        src="#arVideo"
+
+        position="
+          0.16
+          0.117
+          0.125
+        "
+
+        width="0.597"
+
+        height="0.635"
+
+        visible="false"
+
+        material="
+          shader: flat;
+          transparent: false;
+          opacity: 1;
+        "
+
+      ></a-video>
+
+
+      <!-- =========================
+           左门框
+      ========================= -->
+
+      <a-box
+
+        position="
+          0.075
+          0.14
+          0.18
+        "
+
+        width="0.045"
+
+        height="0.57"
+
+        depth="0.095"
+
+        material="
+          shader: flat;
+          color: #171C24;
+        "
+
+      ></a-box>
+
+
+      <!-- =========================
+           右门框
+      ========================= -->
+
+      <a-box
+
+        position="
+          0.445
+          0.14
+          0.18
+        "
+
+        width="0.045"
+
+        height="0.57"
+
+        depth="0.095"
+
+        material="
+          shader: flat;
+          color: #171C24;
+        "
+
+      ></a-box>
+
+
+      <!-- =========================
+           顶部门框
+      ========================= -->
+
+      <a-box
+
+        position="
+          0.260
+          0.425
+          0.18
+        "
+
+        width="0.415"
+
+        height="0.045"
+
+        depth="0.095"
+
+        material="
+          shader: flat;
+          color: #171C24;
+        "
+
+      ></a-box>
+
+
+      <!-- =========================
+           第一层台阶
+      ========================= -->
+
+      <a-box
+
+        position="
+          0.260
+          -0.162
+          0.17
+        "
+
+        width="0.29"
+
+        height="0.045"
+
+        depth="0.15"
+
+        material="
+          shader: flat;
+          color: #426C99;
+        "
+
+      ></a-box>
+
+
+      <!-- =========================
+           第二层台阶
+      ========================= -->
+
+      <a-box
+
+        position="
+          0.260
+          -0.205
+          0.125
+        "
+
+        width="0.22"
+
+        height="0.035"
+
+        depth="0.10"
+
+        material="
+          shader: flat;
+          color: #314F70;
+        "
+
+      ></a-box>
+
+
+      <!-- =========================
+           粒子 1
+      ========================= -->
+
+      <a-sphere
+
+        class="particle"
+
+        position="
+          -0.02
+          0.33
+          0.22
+        "
+
+        radius="0.009"
+
+        material="
+          shader: flat;
+          color: #D7F1FF;
+          opacity: 0.70;
+          transparent: true;
+        "
+
+        animation="
+          property: position;
+          to: 0.02 0.38 0.26;
+          dur: 2200;
+          dir: alternate;
+          easing: easeInOutSine;
+          loop: true;
+        "
+
+      ></a-sphere>
+
+
+      <!-- =========================
+           粒子 2
+      ========================= -->
+
+      <a-sphere
+
+        class="particle"
+
+        position="
+          0.53
+          0.24
+          0.20
+        "
+
+        radius="0.007"
+
+        material="
+          shader: flat;
+          color: #D7F1FF;
+          opacity: 0.55;
+          transparent: true;
+        "
+
+        animation="
+          property: position;
+          to: 0.50 0.30 0.25;
+          dur: 2600;
+          dir: alternate;
+          easing: easeInOutSine;
+          loop: true;
+        "
+
+      ></a-sphere>
+
+
+      <!-- =========================
+           粒子 3
+      ========================= -->
+
+      <a-sphere
+
+        class="particle"
+
+        position="
+          0.58
+          -0.04
+          0.20
+        "
+
+        radius="0.006"
+
+        material="
+          shader: flat;
+          color: #A9D7F2;
+          opacity: 0.48;
+          transparent: true;
+        "
+
+        animation="
+          property: position;
+          to: 0.55 0.02 0.24;
+          dur: 2400;
+          dir: alternate;
+          easing: easeInOutSine;
+          loop: true;
+        "
+
+      ></a-sphere>
+
     </a-entity>
+
   </a-scene>
 
+
+  <!-- =========================
+       JAVASCRIPT
+  ========================= -->
+
   <script>
-    const scene = document.querySelector('a-scene');
-    const target = document.querySelector('#target');
-    const video = document.querySelector('#arVideo');
-    const audio = document.querySelector('#arAudio');
-    const plane = document.querySelector('#videoPlane');
-    const startBtn = document.querySelector('#start');
-    const status = document.querySelector('#status');
+
+    const scene =
+      document.querySelector("a-scene");
+
+
+    const target =
+      document.querySelector("#target");
+
+
+    const video =
+      document.querySelector("#arVideo");
+
+
+    const audio =
+      document.querySelector("#arAudio");
+
+
+    const plane =
+      document.querySelector("#videoPlane");
+
+
+    const startBtn =
+      document.querySelector("#start");
+
+
+    const status =
+      document.querySelector("#status");
+
 
     let started = false;
+
+    let targetVisible = false;
+
     let hideTimer = null;
 
-    function clearHideTimer(){
-      if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
-    }
 
-    function showContent(){
-      clearHideTimer();
-      plane.setAttribute('animation__fadein', 'property: material.opacity; from: 0; to: 1; dur: 180; easing: easeOutQuad');
-    }
+    /* =========================
+       清除隐藏计时器
+    ========================= */
 
-    function hideContentDelayed(){
-      clearHideTimer();
-      hideTimer = setTimeout(() => {
-        plane.setAttribute('animation__fadeout', 'property: material.opacity; from: 1; to: 0; dur: 220; easing: easeInQuad');
-      }, 260);
-    }
+    function clearHideTimer() {
 
-    startBtn.addEventListener('click', async () => {
-      if (started) return;
-      started = true;
-      startBtn.style.display = 'none';
-      status.textContent = '正在启动 AR，请允许摄像头权限…';
-      try {
-        await scene.systems['mindar-image-system'].start();
-        status.textContent = 'AR 已启动：请扫描你的 Sketch Book';
-      } catch (err) {
-        console.error(err);
-        status.textContent = '无法启动摄像头，请检查浏览器权限并使用 HTTPS 网页';
-        startBtn.style.display = 'block';
-        started = false;
+      if (hideTimer) {
+
+        clearTimeout(hideTimer);
+
+        hideTimer = null;
+
       }
-    });
 
-    target.addEventListener('targetFound', async () => {
+    }
+
+
+    /* =========================
+       显示视频
+    ========================= */
+
+    function showVideo() {
+
       clearHideTimer();
-      showContent();
-      status.textContent = '识别成功！《楚门的世界》AR 已启动';
-      try { await video.play(); } catch(e) { console.warn('video play:', e); }
-      try { await audio.play(); } catch(e) { console.warn('audio play:', e); }
-    });
 
-    target.addEventListener('targetLost', () => {
-      status.textContent = '正在重新锁定绘本…';
-      hideContentDelayed();
-      // 轻微丢帧时不立即停止播放，避免闪断；真正丢失后再暂停。
+      targetVisible = true;
+
+
+      /*
+        关键：
+
+        不是 opacity 0 → 1
+
+        而是直接 visible true。
+      */
+
+      plane.setAttribute(
+        "visible",
+        true
+      );
+
+
+      plane.setAttribute(
+        "material",
+        "opacity",
+        1
+      );
+
+    }
+
+
+    /* =========================
+       隐藏视频
+    ========================= */
+
+    function hideVideoDelayed() {
+
       clearHideTimer();
-      hideTimer = setTimeout(() => {
-        video.pause();
-        audio.pause();
-        plane.setAttribute('material', 'opacity', '0');
-      }, 800);
-    });
 
-    window.addEventListener('beforeunload', () => {
-      try { video.pause(); audio.pause(); scene.systems['mindar-image-system'].stop(); } catch(e) {}
-    });
+
+      /*
+        目标短暂丢失时
+        不立即消失。
+
+        延迟 1000ms。
+      */
+
+      hideTimer = setTimeout(
+        () => {
+
+          if (!targetVisible) {
+
+            plane.setAttribute(
+              "visible",
+              false
+            );
+
+            try {
+
+              video.pause();
+
+            } catch (e) {}
+
+            try {
+
+              audio.pause();
+
+            } catch (e) {}
+
+          }
+
+        },
+
+        1000
+      );
+
+    }
+
+
+    /* =========================
+       开始 AR
+    ========================= */
+
+    startBtn.addEventListener(
+      "click",
+
+      async () => {
+
+        if (started) {
+          return;
+        }
+
+
+        started = true;
+
+
+        startBtn.style.display =
+          "none";
+
+
+        status.textContent =
+          "正在启动 AR，请允许摄像头权限…";
+
+
+        try {
+
+          const arSystem =
+            scene.systems[
+              "mindar-image-system"
+            ];
+
+
+          await arSystem.start();
+
+
+          status.textContent =
+            "AR 已启动：请扫描你的 Sketch Book";
+
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+
+          status.textContent =
+            "无法启动摄像头，请检查浏览器权限并使用 HTTPS 网页";
+
+
+          startBtn.style.display =
+            "block";
+
+
+          started = false;
+
+        }
+
+      }
+    );
+
+
+    /* =========================
+       目标识别成功
+    ========================= */
+
+    target.addEventListener(
+      "targetFound",
+
+      async () => {
+
+        clearHideTimer();
+
+
+        targetVisible = true;
+
+
+        status.textContent =
+          "识别成功！《楚门的世界》AR 已启动";
+
+
+        /*
+          显示视频
+        */
+
+        showVideo();
+
+
+        /*
+          视频播放
+        */
+
+        try {
+
+          video.muted = true;
+
+          video.playsInline = true;
+
+
+          if (
+            video.readyState < 2
+          ) {
+
+            await new Promise(
+              resolve => {
+
+                const readyHandler =
+                  () => {
+
+                    video.removeEventListener(
+                      "loadeddata",
+                      readyHandler
+                    );
+
+                    resolve();
+
+                  };
+
+
+                video.addEventListener(
+                  "loadeddata",
+                  readyHandler
+                );
+
+              }
+            );
+
+          }
+
+
+          await video.play();
+
+        } catch (error) {
+
+          console.warn(
+            "Video play error:",
+            error
+          );
+
+        }
+
+
+        /*
+          音乐播放
+        */
+
+        try {
+
+          await audio.play();
+
+        } catch (error) {
+
+          console.warn(
+            "Audio play error:",
+            error
+          );
+
+        }
+
+      }
+
+    );
+
+
+    /* =========================
+       目标丢失
+    ========================= */
+
+    target.addEventListener(
+      "targetLost",
+
+      () => {
+
+        status.textContent =
+          "正在重新锁定绘本…";
+
+
+        targetVisible = false;
+
+
+        hideVideoDelayed();
+
+      }
+
+    );
+
+
+    /* =========================
+       页面隐藏
+    ========================= */
+
+    document.addEventListener(
+      "visibilitychange",
+
+      () => {
+
+        if (
+          document.hidden
+        ) {
+
+          try {
+
+            video.pause();
+
+          } catch (e) {}
+
+
+          try {
+
+            audio.pause();
+
+          } catch (e) {}
+
+        }
+
+      }
+
+    );
+
+
+    /* =========================
+       页面离开
+    ========================= */
+
+    window.addEventListener(
+      "beforeunload",
+
+      () => {
+
+        try {
+
+          video.pause();
+
+        } catch (e) {}
+
+
+        try {
+
+          audio.pause();
+
+        } catch (e) {}
+
+
+        try {
+
+          scene.systems[
+            "mindar-image-system"
+          ].stop();
+
+        } catch (e) {}
+
+      }
+
+    );
+
   </script>
+
 </body>
 </html>
